@@ -40,3 +40,57 @@ properties: []
 methods: []
 events: []
 callbacks: []
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local lockOnRange = 50 -- studs
+local isLocked = false
+local target = nil
+
+-- Function to get closest enemy
+local function getClosestEnemy()
+	local closest = nil
+	local shortestDistance = lockOnRange
+
+	for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+		if enemy:FindFirstChild("HumanoidRootPart") then
+			local distance = (enemy.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+			if distance < shortestDistance then
+				shortestDistance = distance
+				closest = enemy
+			end
+		end
+	end
+
+	return closest
+end
+
+-- Toggle Lock-On with "Q"
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+
+	if input.KeyCode == Enum.KeyCode.Q then
+		if not isLocked then
+			target = getClosestEnemy()
+			if target then
+				isLocked = true
+			end
+		else
+			isLocked = false
+			target = nil
+		end
+	end
+end)
+
+-- Update camera every frame
+RunService.RenderStepped:Connect(function()
+	if isLocked and target and target:FindFirstChild("HumanoidRootPart") then
+		camera.CFrame = CFrame.new(camera.CFrame.Position, target.HumanoidRootPart.Position)
+	end
+end)
+
+
